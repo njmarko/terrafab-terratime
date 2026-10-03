@@ -1,0 +1,41 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Terafab Terratime",
+      "hasCanvas": false,
+      "bodyTextLen": 84,
+      "bodyTextHash": "e4393340596ee7d9f66bdf901df8880d247d80a3fa37226e6d5acdfcaad32ca0",
+      "bodyTextPrefix": "TERAFAB TERRATIME ––:––:–– ––– LIVE · SCROLL OR PINCH TO ZOOM Ma",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Terafab Terratime",
+      "hasCanvas": false,
+      "bodyTextLen": 84,
+      "bodyTextHash": "e4393340596ee7d9f66bdf901df8880d247d80a3fa37226e6d5acdfcaad32ca0",
+      "bodyTextPrefix": "TERAFAB TERRATIME ––:––:–– ––– LIVE · SCROLL OR PINCH TO ZOOM Ma",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": true,
+  "baselineReasons": [
+    "desktop: body text replaced (similar length, page start changed)",
+    "mobile: body text replaced (similar length, page start changed)"
+  ]
+}

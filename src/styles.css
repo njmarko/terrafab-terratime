@@ -1,0 +1,351 @@
+@import "tailwindcss";
+
+@theme {
+  --color-bg: #070b10;
+  --color-fg: #e7eef6;
+  --color-muted: #9aabba;
+  --color-glow: #d5e6f7;
+  --color-line: #c5d5e4;
+  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+
+@layer base {
+  html {
+    height: 100%;
+    background: var(--color-bg);
+    color: var(--color-fg);
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    min-height: 100%;
+    margin: 0;
+    overflow: hidden;
+    background: var(--color-bg);
+  }
+  button:not(:disabled),
+  [role="button"]:not(:disabled) {
+    cursor: pointer;
+  }
+}
+
+.veil {
+  background:
+    radial-gradient(ellipse at center, transparent 42%, rgb(5 8 12 / 0.55) 100%),
+    linear-gradient(to top, rgb(5 8 12 / 0.5), transparent 32%);
+}
+
+.top-scrim {
+  background: linear-gradient(to bottom, rgb(5 8 12 / 0.55), transparent);
+}
+
+.view {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  touch-action: none;
+}
+
+.stage {
+  position: absolute;
+  z-index: 1;
+}
+
+.photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.glass {
+  position: absolute;
+  z-index: 0;
+  display: none;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.glass-mask {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.glass img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.glass[data-flip="1"] img {
+  transform: scaleY(-1);
+}
+
+.glass-blur {
+  filter: blur(var(--glass-blur, 18px)) saturate(0.72) brightness(1.08);
+  transform: scale(var(--glass-scale, 1.08));
+}
+
+.glass[data-flip="1"] .glass-blur {
+  transform: scale(var(--glass-scale, 1.08)) scaleY(-1);
+}
+
+.view[data-blur="0"] .glass-blur {
+  filter: none;
+  transform: none;
+}
+
+.view[data-blur="0"] .glass[data-flip="1"] .glass-blur {
+  transform: scaleY(-1);
+}
+
+.glass::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(255 255 255 / 0.08), transparent 24%, transparent 76%, rgb(255 255 255 / 0.05));
+}
+
+.glass-top {
+  box-shadow: inset 0 -1px 0 rgb(255 255 255 / 0.2);
+}
+
+.glass-top::after {
+  background:
+    linear-gradient(to top, rgb(255 255 255 / 0.1), transparent 16%),
+    linear-gradient(to top, transparent 45%, rgb(7 11 16 / 0.28));
+}
+
+.glass-bottom {
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.2);
+}
+
+.glass-bottom::after {
+  background:
+    linear-gradient(to bottom, rgb(255 255 255 / 0.1), transparent 16%),
+    linear-gradient(to bottom, transparent 45%, rgb(7 11 16 / 0.28));
+}
+
+.dial {
+  position: absolute;
+  aspect-ratio: 1;
+  container-type: size;
+  touch-action: none;
+  cursor: grab;
+  border-radius: 9999px;
+}
+
+.dial:active {
+  cursor: grabbing;
+}
+
+.dial:focus-visible {
+  outline: 1px solid color-mix(in oklab, var(--color-line) 70%, transparent);
+  outline-offset: 8px;
+}
+
+.dial:not([data-ready]) .rotor {
+  opacity: 0;
+}
+
+.rotor {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 2;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.rotor-hour {
+  transform: rotate(var(--hour));
+}
+
+.rotor-minute {
+  transform: rotate(var(--minute));
+}
+
+.rotor-second {
+  transform: rotate(var(--second));
+}
+
+.wing {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: auto;
+  max-width: none;
+  transform: translateX(-50%);
+  filter:
+    drop-shadow(0 16px 14px rgb(0 0 0 / 0.55))
+    drop-shadow(0 0 16px rgb(186 214 238 / 0.28));
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.wing-hour {
+  height: var(--hand-hour, 35cqw);
+}
+
+.wing-minute {
+  height: var(--hand-minute, 52cqw);
+}
+
+.wing-second {
+  height: var(--hand-second, 55cqw);
+  bottom: calc(var(--hand-second, 55cqw) * -0.0528);
+  filter: drop-shadow(0 0 6px rgb(186 214 238 / 0.55));
+}
+
+.tick-arm {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  z-index: 1;
+  width: 0;
+  height: 50%;
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+
+.tick {
+  position: absolute;
+  top: 1.2cqw;
+  left: 0;
+  width: calc(var(--line-weight, 2) * 0.42cqw);
+  border-radius: 999px;
+  transform: translateX(-50%);
+  background: var(--face-line, #2a3645);
+}
+
+.tick-major {
+  height: calc(2.2cqw + var(--line-weight, 2) * 0.4cqw);
+  opacity: 1;
+}
+
+.tick-minor {
+  height: calc(1cqw + var(--line-weight, 2) * 0.22cqw);
+  opacity: 0.72;
+}
+
+.numeral {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  display: grid;
+  width: calc(var(--numeral-weight, 7) * 2.4cqw);
+  height: calc(var(--numeral-weight, 7) * 1.35cqw);
+  margin-top: calc(var(--numeral-weight, 7) * -0.675cqw);
+  margin-left: calc(var(--numeral-weight, 7) * -1.2cqw);
+  place-items: center;
+  font-family: var(--font-display);
+  font-size: calc(var(--numeral-weight, 7) * 1cqw);
+  line-height: 1;
+  color: var(--face-numeral, #2a3645);
+  -webkit-text-stroke: calc(var(--numeral-weight, 7) * 0.045cqw) currentColor;
+  paint-order: stroke fill;
+  text-shadow: 0 1px 10px rgb(0 0 0 / 0.75);
+  pointer-events: none;
+}
+
+.hub {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  z-index: 5;
+  width: 2.6cqw;
+  height: 2.6cqw;
+  transform: translate(-50%, -50%);
+  border-radius: 999px;
+  background: radial-gradient(circle at 38% 34%, var(--color-fg), var(--color-line) 42%, var(--color-bg) 74%);
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--color-fg) 45%, transparent),
+    0 8px 18px rgb(0 0 0 / 0.5);
+  pointer-events: none;
+}
+
+.scrim-text {
+  text-shadow: 0 1px 14px rgb(0 0 0 / 0.72);
+}
+
+.live-dot {
+  animation: live-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.35;
+  }
+}
+
+.hand-range {
+  width: 100%;
+  height: 1.75rem;
+  accent-color: var(--color-glow);
+  cursor: pointer;
+}
+
+.ink {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex-shrink: 0;
+  padding: 0.15rem;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-line) 40%, transparent);
+  background: transparent;
+  cursor: pointer;
+}
+
+.ink::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.ink::-webkit-color-swatch,
+.ink::-moz-color-swatch {
+  border: none;
+  border-radius: 999px;
+}
+
+.switch {
+  position: relative;
+  height: 1.5rem;
+  width: 2.75rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  border: 1px solid color-mix(in oklab, var(--color-line) 40%, transparent);
+  background: color-mix(in oklab, var(--color-bg) 80%, transparent);
+}
+
+.switch[data-on="true"] {
+  background: color-mix(in oklab, var(--color-glow) 75%, transparent);
+}
+
+.switch-knob {
+  position: absolute;
+  top: 0.125rem;
+  left: 0.125rem;
+  height: 1.15rem;
+  width: 1.15rem;
+  border-radius: 999px;
+  background: var(--color-fg);
+}
+
+.switch[data-on="true"] .switch-knob {
+  left: 1.35rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-dot {
+    animation: none;
+  }
+}

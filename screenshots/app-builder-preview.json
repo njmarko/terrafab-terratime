@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Terafab Terratime",
+      "hasCanvas": false,
+      "bodyTextLen": 90,
+      "bodyTextHash": "ea37ed80b2c9c1c52896773f15c7f1f344f241a2caa1b545c6c0dae64cbf5543",
+      "bodyTextPrefix": "TERAFAB TERRATIME 13:36:42 SAT 3 OCT LIVE · SCROLL OR PINCH TO Z",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Terafab Terratime",
+      "hasCanvas": false,
+      "bodyTextLen": 90,
+      "bodyTextHash": "17d4d37bc1e8405fb4b0d0fc3f5a094b7004b93bf4fa156ef62d4f333e1f64ee",
+      "bodyTextPrefix": "TERAFAB TERRATIME 13:36:44 SAT 3 OCT LIVE · SCROLL OR PINCH TO Z",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}
