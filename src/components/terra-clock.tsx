@@ -133,20 +133,30 @@ export function TerraClock() {
       stage.style.top = `${top}px`;
       stage.style.width = `${width}px`;
       stage.style.height = `${height}px`;
-      for (let i = 0; i < TILES; i += 1) {
-        const flip = i % 2 === 0;
-        for (const side of [-1, 1] as const) {
-          const el = glassRefs.current[(side === -1 ? 0 : TILES) + i];
+      for (const band of [
+        { start: 0, side: -1 as const, axis: "y" as const },
+        { start: TILES, side: 1 as const, axis: "y" as const },
+        { start: TILES * 2, side: -1 as const, axis: "x" as const },
+        { start: TILES * 3, side: 1 as const, axis: "x" as const },
+      ]) {
+        for (let i = 0; i < TILES; i += 1) {
+          const el = glassRefs.current[band.start + i];
           if (!el) continue;
-          const y = top + side * ((i + 1) * height - 2);
-          const visible = y < vh && y + height > 0;
+          const along = band.axis === "y" ? height : width;
+          const origin = band.axis === "y" ? top : left;
+          const pos = origin + band.side * ((i + 1) * along - 2);
+          const visible =
+            band.axis === "y" ? pos < vh && pos + height > 0 : pos < vw && pos + width > 0;
           el.style.display = visible ? "block" : "none";
           if (!visible) continue;
-          el.style.left = `${left}px`;
-          el.style.top = `${y}px`;
+          el.style.left = `${band.axis === "y" ? left : pos}px`;
+          el.style.top = `${band.axis === "y" ? pos : top}px`;
           el.style.width = `${width}px`;
           el.style.height = `${height}px`;
-          el.dataset.flip = flip ? "1" : "0";
+          el.dataset.flip = i % 2 === 0 ? "1" : "0";
+          el.dataset.axis = band.axis;
+          el.dataset.side =
+            band.axis === "y" ? (band.side === -1 ? "top" : "bottom") : band.side === -1 ? "left" : "right";
         }
       }
       geomRef.current = { s, stageTop: top, stageH: height };
@@ -159,6 +169,7 @@ export function TerraClock() {
       view.style.setProperty("--glass-scale", `${1 + blurPx / 200}`);
       view.dataset.blur = blurPx === 0 ? "0" : "1";
       const rect = dial.getBoundingClientRect();
+      const centerX = rect.left + rect.width / 2;
       const centerY = rect.top + rect.height / 2;
       let radius = 0;
       if (autoClearRef.current && blurPx > 0 && rect.height > 0) {
@@ -166,34 +177,43 @@ export function TerraClock() {
           radius = Math.max(radius, (handsRef.current[key] / 100) * rect.height * HAND_META[key].tip);
         });
       }
-      const highestY = centerY - radius;
-      const lowestY = centerY + radius;
-      glassRefs.current.forEach((el, index) => {
+      const reach = {
+        top: centerY - radius,
+        bottom: centerY + radius,
+        left: centerX - radius,
+        right: centerX + radius,
+      };
+      glassRefs.current.forEach((el) => {
         if (!el || el.style.display === "none") return;
         const maskEl = el.querySelector<HTMLElement>(".glass-mask");
         if (!maskEl) return;
-        const tileTop = Number.parseFloat(el.style.top);
-        const tileH = Number.parseFloat(el.style.height);
-        if (!tileH) return;
-        const topSide = index < TILES;
-        const cut = (topSide ? highestY : lowestY) - tileTop;
-        const feather = 6 / tileH;
+        const horizontal = el.dataset.axis === "x";
+        const side = el.dataset.side ?? "top";
+        const tileStart = Number.parseFloat(horizontal ? el.style.left : el.style.top);
+        const tileSpan = Number.parseFloat(horizontal ? el.style.width : el.style.height);
+        if (!tileSpan) return;
+        const edge = reach[side as keyof typeof reach];
+        const cut = edge - tileStart;
+        const feather = 6 / tileSpan;
+        const outward = side === "top" || side === "left";
         let mask = "none";
         if (!autoClearRef.current || blurPx <= 0 || radius <= 0) {
           mask = "none";
-        } else if (topSide) {
+        } else if (outward) {
           if (cut <= 0) mask = "linear-gradient(transparent, transparent)";
-          else if (cut < tileH) {
-            const t = cut / tileH;
+          else if (cut < tileSpan) {
+            const t = cut / tileSpan;
             const fade = Math.max(0, t - feather) * 100;
-            mask = `linear-gradient(to bottom, #000 0%, #000 ${fade}%, transparent ${t * 100}%, transparent 100%)`;
+            const dir = horizontal ? "to right" : "to bottom";
+            mask = `linear-gradient(${dir}, #000 0%, #000 ${fade}%, transparent ${t * 100}%, transparent 100%)`;
           }
-        } else if (cut >= tileH) {
+        } else if (cut >= tileSpan) {
           mask = "linear-gradient(transparent, transparent)";
         } else if (cut > 0) {
-          const t = cut / tileH;
+          const t = cut / tileSpan;
           const fade = Math.min(100, (t + feather) * 100);
-          mask = `linear-gradient(to bottom, transparent 0%, transparent ${t * 100}%, #000 ${fade}%, #000 100%)`;
+          const dir = horizontal ? "to right" : "to bottom";
+          mask = `linear-gradient(${dir}, transparent 0%, transparent ${t * 100}%, #000 ${fade}%, #000 100%)`;
         }
         if (maskEl.dataset.mask === mask) return;
         maskEl.dataset.mask = mask;
@@ -412,20 +432,25 @@ export function TerraClock() {
         onPointerUp={endPointer}
         onPointerCancel={endPointer}
       >
-        {Array.from({ length: TILES * 2 }, (_, index) => (
-          <div
-            key={index}
-            ref={(node) => {
-              glassRefs.current[index] = node;
-            }}
-            className={index < TILES ? "glass glass-top" : "glass glass-bottom"}
-          >
-            <img src="/clock/bg.jpg?v=3" alt="" draggable={false} />
-            <div className="glass-mask">
-              <img src="/clock/bg.jpg?v=3" alt="" draggable={false} className="glass-blur" />
+        {Array.from({ length: TILES * 4 }, (_, index) => {
+          const band = Math.floor(index / TILES);
+          const className = ["glass glass-top", "glass glass-bottom", "glass glass-left", "glass glass-right"][band];
+          return (
+            <div
+              key={index}
+              ref={(node) => {
+                glassRefs.current[index] = node;
+              }}
+              className={className}
+              data-axis={band < 2 ? "y" : "x"}
+            >
+              <img src="/clock/bg.jpg?v=3" alt="" draggable={false} />
+              <div className="glass-mask">
+                <img src="/clock/bg.jpg?v=3" alt="" draggable={false} className="glass-blur" />
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <div ref={stageRef} className="stage">
           <img
             src="/clock/bg.jpg?v=3"

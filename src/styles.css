@@ -81,8 +81,12 @@
   height: 100%;
 }
 
-.glass[data-flip="1"] img {
+.glass[data-axis="y"][data-flip="1"] img {
   transform: scaleY(-1);
+}
+
+.glass[data-axis="x"][data-flip="1"] img {
+  transform: scaleX(-1);
 }
 
 .glass-blur {
@@ -90,8 +94,12 @@
   transform: scale(var(--glass-scale, 1.08));
 }
 
-.glass[data-flip="1"] .glass-blur {
+.glass[data-axis="y"][data-flip="1"] .glass-blur {
   transform: scale(var(--glass-scale, 1.08)) scaleY(-1);
+}
+
+.glass[data-axis="x"][data-flip="1"] .glass-blur {
+  transform: scale(var(--glass-scale, 1.08)) scaleX(-1);
 }
 
 .view[data-blur="0"] .glass-blur {
@@ -99,8 +107,12 @@
   transform: none;
 }
 
-.view[data-blur="0"] .glass[data-flip="1"] .glass-blur {
+.view[data-blur="0"] .glass[data-axis="y"][data-flip="1"] .glass-blur {
   transform: scaleY(-1);
+}
+
+.view[data-blur="0"] .glass[data-axis="x"][data-flip="1"] .glass-blur {
+  transform: scaleX(-1);
 }
 
 .glass::after {
@@ -128,6 +140,26 @@
   background:
     linear-gradient(to bottom, rgb(255 255 255 / 0.1), transparent 16%),
     linear-gradient(to bottom, transparent 45%, rgb(7 11 16 / 0.28));
+}
+
+.glass-left {
+  box-shadow: inset -1px 0 0 rgb(255 255 255 / 0.2);
+}
+
+.glass-left::after {
+  background:
+    linear-gradient(to left, rgb(255 255 255 / 0.1), transparent 16%),
+    linear-gradient(to left, transparent 45%, rgb(7 11 16 / 0.28));
+}
+
+.glass-right {
+  box-shadow: inset 1px 0 0 rgb(255 255 255 / 0.2);
+}
+
+.glass-right::after {
+  background:
+    linear-gradient(to right, rgb(255 255 255 / 0.1), transparent 16%),
+    linear-gradient(to right, transparent 45%, rgb(7 11 16 / 0.28));
 }
 
 .dial {
