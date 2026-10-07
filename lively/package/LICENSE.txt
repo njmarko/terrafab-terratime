@@ -1,0 +1,10 @@
+Terafab Terratime - Lively Wallpaper
+https://github.com/njmarko/terrafab-terratime
+
+Code, photograph and clock artwork (clock/*.jpg, clock/*.png, thumbnail.jpg):
+(c) Marko Njegomir.
+
+Fonts bundled in assets/*.woff2 / *.woff:
+  IBM Plex Mono    (c) IBM Corp.                       SIL Open Font License 1.1, see fonts/OFL-IBMPlexMono.txt
+  Instrument Serif (c) The Instrument Serif Project Authors  SIL Open Font License 1.1, see fonts/OFL-InstrumentSerif.txt
+Font files are the latin subsets packaged by Fontsource (https://fontsource.org).

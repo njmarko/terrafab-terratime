@@ -2,6 +2,37 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { format } from "date-fns";
 import { GripVertical, Minus, Plus, Clock, RotateCcw } from "lucide-react";
 
+/** Base for public assets: "/" on the site, "./" in the Lively build (vite base). */
+const ASSET = import.meta.env.BASE_URL;
+
+/**
+ * Options that a host (the Lively wallpaper) can set from outside. Every field is
+ * optional; a missing field keeps the clock's own state (the site's defaults or menu).
+ */
+export type ClockSettings = {
+  zoom: number; // 0 (whole photo) .. 1 (dial fills the shorter side)
+  smooth: boolean; // sweeping second hand (site) or one tick per second
+  showUi: boolean; // master switch, like "Show interface"
+  showTitle: boolean;
+  showTime: boolean;
+  showDate: boolean;
+  showLive: boolean;
+  showCredit: boolean;
+  blur: number;
+  autoClear: boolean;
+  marks: "off" | "hours" | "all";
+  lineColor: string;
+  lineWeight: number;
+  numerals: "off" | "arabic" | "roman";
+  numeralSide: "inside" | "outside";
+  numeralColor: string;
+  numeralWeight: number;
+  hands: { hour: number; minute: number; second: number };
+  autoStack: boolean;
+  fitCircle: boolean;
+  face: { x: number; y: number; size: number };
+};
+
 const PHOTO = { w: 1872, h: 1056, cx: 944, cy: 518, r: 269 };
 const TILES = 3;
 const HAND_DEFAULT = { hour: 35, minute: 52, second: 55 };
@@ -49,7 +80,14 @@ function pointerAngle(event: { clientX: number; clientY: number }, el: HTMLEleme
   return (Math.atan2(dx, -dy) * 180) / Math.PI;
 }
 
-export function TerraClock() {
+export function TerraClock({
+  wallpaper = false,
+  settings,
+}: {
+  /** Wallpaper mode: no buttons or menu, no winding by drag, no wheel zoom. */
+  wallpaper?: boolean;
+  settings?: Partial<ClockSettings>;
+} = {}) {
   const viewRef = useRef<HTMLDivElement>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const glassRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -84,6 +122,11 @@ export function TerraClock() {
   const [lineWeight, setLineWeight] = useState(LINE_WEIGHT);
   const [numeralWeight, setNumeralWeight] = useState(NUMERAL_WEIGHT);
   const [showUi, setShowUi] = useState(true);
+  const [items, setItems] = useState({ title: true, time: true, date: true, live: true, credit: true });
+  const [smooth, setSmooth] = useState(true);
+  const smoothRef = useRef(true);
+  smoothRef.current = smooth;
+  const wakeRef = useRef<() => void>(() => {});
   const handsRef = useRef(HAND_DEFAULT);
   const blurRef = useRef(18);
   const autoClearRef = useRef(true);
@@ -105,6 +148,42 @@ export function TerraClock() {
     }
   };
 
+  useEffect(() => {
+    if (!settings) return;
+    const o = settings;
+    if (o.zoom !== undefined) seekZoom(o.zoom);
+    if (o.smooth !== undefined) {
+      smoothRef.current = o.smooth;
+      setSmooth(o.smooth);
+    }
+    if (o.showUi !== undefined) setShowUi(o.showUi);
+    setItems((cur) => ({
+      title: o.showTitle ?? cur.title,
+      time: o.showTime ?? cur.time,
+      date: o.showDate ?? cur.date,
+      live: o.showLive ?? cur.live,
+      credit: o.showCredit ?? cur.credit,
+    }));
+    if (o.blur !== undefined) setBlur(o.blur);
+    if (o.autoClear !== undefined) setAutoClear(o.autoClear);
+    if (o.marks !== undefined) setMarks(o.marks);
+    if (o.lineColor !== undefined) setLineColor(o.lineColor);
+    if (o.lineWeight !== undefined) setLineWeight(o.lineWeight);
+    if (o.numerals !== undefined) setNumerals(o.numerals);
+    if (o.numeralSide !== undefined) setNumeralSide(o.numeralSide);
+    if (o.numeralColor !== undefined) setNumeralColor(o.numeralColor);
+    if (o.numeralWeight !== undefined) setNumeralWeight(o.numeralWeight);
+    if (o.hands !== undefined) setHands(o.hands);
+    if (o.autoStack !== undefined) setAutoStack(o.autoStack);
+    if (o.fitCircle !== undefined) setFitCircle(o.fitCircle);
+    if (o.face !== undefined) setFace(o.face);
+    wakeRef.current();
+  }, [settings]);
+
+  useEffect(() => {
+    wakeRef.current();
+  }, [hands, blur, autoClear, fitCircle, face]);
+
   useLayoutEffect(() => {
     const dial = dialRef.current;
     const view = viewRef.current;
@@ -113,6 +192,7 @@ export function TerraClock() {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     reduceRef.current = reduce;
     let frameId = 0;
+    let timerId = 0;
     let lastText = "";
 
     const place = (z: number) => {
@@ -229,7 +309,7 @@ export function TerraClock() {
     observer.observe(view);
 
     const apply = (now: Date) => {
-      const ms = reduce ? 0 : now.getMilliseconds();
+      const ms = reduce || !smoothRef.current ? 0 : now.getMilliseconds();
       const seconds = now.getSeconds() + ms / 1000;
       const minutes = now.getMinutes() + seconds / 60;
       const hours = (now.getHours() % 12) + minutes / 60;
@@ -276,6 +356,22 @@ export function TerraClock() {
         }
       }
       paintMasks();
+      const settled = zoomVelRef.current === 0 && zoomRef.current === targetRef.current;
+      if (!smoothRef.current && settled) {
+        // Ticking: sleep until just after the next whole second instead of 60 fps.
+        const msLeft = 1000 - ((Date.now() + offsetRef.current) % 1000);
+        timerId = window.setTimeout(() => {
+          timerId = 0;
+          frameId = requestAnimationFrame(loop);
+        }, msLeft + 4);
+      } else {
+        frameId = requestAnimationFrame(loop);
+      }
+    };
+    wakeRef.current = () => {
+      if (!timerId) return; // already running every frame
+      clearTimeout(timerId);
+      timerId = 0;
       frameId = requestAnimationFrame(loop);
     };
     apply(new Date(Date.now() + offsetRef.current));
@@ -286,13 +382,15 @@ export function TerraClock() {
       const unit = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? view.clientHeight : 1;
       seekZoom(targetRef.current - (event.deltaY * unit) / 1400);
     };
-    view.addEventListener("wheel", onWheel, { passive: false });
+    if (!wallpaper) view.addEventListener("wheel", onWheel, { passive: false });
     return () => {
       cancelAnimationFrame(frameId);
+      clearTimeout(timerId);
+      wakeRef.current = () => {};
       view.removeEventListener("wheel", onWheel);
       observer.disconnect();
     };
-  }, []);
+  }, [wallpaper]);
 
   useEffect(() => {
     if (!optionsOpen) return;
@@ -321,7 +419,7 @@ export function TerraClock() {
   };
 
   const onPointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return;
+    if (wallpaper || event.button !== 0) return;
     pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY });
     event.currentTarget.setPointerCapture(event.pointerId);
     if (pointers.current.size >= 2) {
@@ -423,7 +521,7 @@ export function TerraClock() {
   };
 
   return (
-    <main className="relative h-dvh overflow-hidden bg-bg text-fg">
+    <main className="relative h-dvh overflow-hidden bg-bg text-fg" data-tick={smooth ? undefined : ""}>
       <div
         ref={viewRef}
         className="view"
@@ -444,16 +542,16 @@ export function TerraClock() {
               className={className}
               data-axis={band < 2 ? "y" : "x"}
             >
-              <img src="/clock/bg.jpg?v=3" alt="" draggable={false} />
+              <img src={`${ASSET}clock/bg.jpg?v=3`} alt="" draggable={false} />
               <div className="glass-mask">
-                <img src="/clock/bg.jpg?v=3" alt="" draggable={false} className="glass-blur" />
+                <img src={`${ASSET}clock/bg.jpg?v=3`} alt="" draggable={false} className="glass-blur" />
               </div>
             </div>
           );
         })}
         <div ref={stageRef} className="stage">
           <img
-            src="/clock/bg.jpg?v=3"
+            src={`${ASSET}clock/bg.jpg?v=3`}
             alt=""
             className="photo"
             draggable={false}
@@ -514,13 +612,13 @@ export function TerraClock() {
                 ))
               : null}
             <div className="rotor rotor-hour" style={{ zIndex: stackZ.hour }}>
-              <img src="/clock/hour.png?v=2" alt="" draggable={false} className="wing wing-hour" />
+              <img src={`${ASSET}clock/hour.png?v=2`} alt="" draggable={false} className="wing wing-hour" />
             </div>
             <div className="rotor rotor-minute" style={{ zIndex: stackZ.minute }}>
-              <img src="/clock/minute.png?v=2" alt="" draggable={false} className="wing wing-minute" />
+              <img src={`${ASSET}clock/minute.png?v=2`} alt="" draggable={false} className="wing wing-minute" />
             </div>
             <div className="rotor rotor-second" style={{ zIndex: stackZ.second }}>
-              <img src="/clock/second.png?v=2" alt="" draggable={false} className="wing wing-second" />
+              <img src={`${ASSET}clock/second.png?v=2`} alt="" draggable={false} className="wing wing-second" />
             </div>
             <div className="hub" />
           </div>
@@ -532,14 +630,28 @@ export function TerraClock() {
       {showUi ? (
       <header className="pointer-events-none absolute inset-x-0 top-0 z-10 px-5 pt-5 sm:px-8 sm:pt-7">
         <div className="scrim-text max-w-md">
-          <p className="font-display text-lg leading-none tracking-[0.12em] text-fg sm:text-2xl sm:tracking-[0.18em]">
+          <p
+            className="font-display text-lg leading-none tracking-[0.12em] text-fg sm:text-2xl sm:tracking-[0.18em]"
+            style={items.title ? undefined : { visibility: "hidden" }}
+          >
             TERAFAB TERRATIME
           </p>
-          <p className="font-mono mt-4 text-3xl leading-none text-fg tabular-nums sm:text-4xl">
+          <p
+            className="font-mono mt-4 text-3xl leading-none text-fg tabular-nums sm:text-4xl"
+            style={items.time ? undefined : { visibility: "hidden" }}
+          >
             {timeText}
           </p>
-          <p className="font-mono mt-2 text-xs tracking-widest text-muted tabular-nums">{dateText}</p>
-          <div className="pointer-events-auto mt-4 flex min-h-11 items-center gap-3">
+          <p
+            className="font-mono mt-2 text-xs tracking-widest text-muted tabular-nums"
+            style={items.date ? undefined : { visibility: "hidden" }}
+          >
+            {dateText}
+          </p>
+          <div
+            className="pointer-events-auto mt-4 flex min-h-11 items-center gap-3"
+            style={items.live ? undefined : { visibility: "hidden" }}
+          >
             {shifted ? (
               <button
                 type="button"
@@ -552,11 +664,14 @@ export function TerraClock() {
             ) : (
               <p className="flex items-center gap-2 font-mono text-xs tracking-widest text-muted uppercase">
                 <span className="live-dot inline-block size-1.5 rounded-full bg-glow" />
-                Live · scroll or pinch to zoom
+                {wallpaper ? "Live · local time" : "Live · scroll or pinch to zoom"}
               </p>
             )}
           </div>
-          <p className="pointer-events-auto font-mono mt-3 text-xs tracking-widest text-muted">
+          <p
+            className="pointer-events-auto font-mono mt-3 text-xs tracking-widest text-muted"
+            style={items.credit ? undefined : { visibility: "hidden" }}
+          >
             Made by{" "}
             <a
               href="https://x.com/njmarko"
@@ -571,6 +686,7 @@ export function TerraClock() {
       </header>
       ) : null}
 
+      {wallpaper ? null : (
       <div ref={optionsRef} className="absolute right-4 bottom-4 z-20">
         {optionsOpen ? (
           <div
@@ -912,6 +1028,7 @@ export function TerraClock() {
           ) : null}
         </div>
       </div>
+      )}
     </main>
   );
 }

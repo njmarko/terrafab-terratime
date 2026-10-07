@@ -310,6 +310,11 @@
   animation: live-pulse 2.4s ease-in-out infinite;
 }
 
+/* Ticking (wallpaper option): solid dot, so nothing animates between seconds. */
+main[data-tick] .live-dot {
+  animation: none;
+}
+
 @keyframes live-pulse {
   0%,
   100% {

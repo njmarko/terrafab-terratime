@@ -1,0 +1,4 @@
+/* The site's styles. Vite's root is lively/ for this build, so point Tailwind at the
+   component sources explicitly (the site build finds them automatically). */
+@import "../src/styles.css";
+@source "../src/components/terra-clock.tsx";

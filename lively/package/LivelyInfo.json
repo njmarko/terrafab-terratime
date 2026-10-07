@@ -1,0 +1,21 @@
+{
+  "AppVersion": "2.2.1.0",
+  "Title": "Terafab Terratime",
+  "Thumbnail": "thumbnail.jpg",
+  "Preview": null,
+  "Desc": "Analog clock whose hands are the wings of a building seen from above a night forest. Offline version of terrafab-terratime.grok.me. Right-click > Customise for zoom, header items, ticking or smooth seconds, blur, face and hands.",
+  "Author": "Marko Njegomir",
+  "License": "(c) Marko Njegomir. Fonts: SIL OFL 1.1. See LICENSE.txt",
+  "Contact": "https://github.com/njmarko/terrafab-terratime",
+  "Type": 1,
+  "FileName": "index.html",
+  "Arguments": null,
+  "IsAbsolutePath": false,
+  "Tags": [
+    "clock",
+    "analog",
+    "night",
+    "forest"
+  ],
+  "Version": 1
+}
